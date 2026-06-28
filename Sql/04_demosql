@@ -1,0 +1,330 @@
+-- ============================================================
+-- RAPIDRIDE TAXI MANAGEMENT SYSTEM
+-- FILE 4: Demo Anonymous Blocks (FIXED - No Substitution Variables)
+-- Author: Group Project Team
+-- Date: JUN-2026
+-- ============================================================
+
+SET SERVEROUTPUT ON;
+SET FEEDBACK ON;
+SET VERIFY OFF;
+SET DEFINE OFF;  -- ← This stops substitution variable prompts
+
+-- ============================================================
+-- DEMO SCRIPT - Complete Test Run
+-- ============================================================
+
+DECLARE
+    -- Variables for procedure calls
+    v_estimated_fare    NUMBER;
+    v_ride_id           NUMBER;
+    v_success           VARCHAR2(200);
+    v_payment_id        NUMBER;
+    v_driver_rating     NUMBER;
+    v_fare              NUMBER;
+    v_rides_cursor      SYS_REFCURSOR;
+    
+    TYPE ride_summary_rec IS RECORD (
+        ride_id         NUMBER,
+        customer_name   VARCHAR2(100),
+        pickup          VARCHAR2(100),
+        dropoff         VARCHAR2(100),
+        status          VARCHAR2(30),
+        fare            NUMBER,
+        ride_date       TIMESTAMP
+    );
+    v_ride_rec          ride_summary_rec;
+    
+    e_demo_failure EXCEPTION;
+    
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('=========================================');
+    DBMS_OUTPUT.PUT_LINE('🚗 RAPIDRIDE - DEMO SCRIPT');
+    DBMS_OUTPUT.PUT_LINE('=========================================');
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 1: Book a New Ride
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 1: Booking a New Ride');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        pkg_ride_management.sp_book_ride(
+            p_customer_id => 1000,
+            p_pickup_location => 'Airport',
+            p_dropoff_location => 'Hamareweyne',
+            p_vehicle_type_id => 1,
+            p_distance_km => 5.5,
+            p_estimated_fare => v_estimated_fare,
+            p_ride_id => v_ride_id
+        );
+        
+        IF v_ride_id > 0 THEN
+            DBMS_OUTPUT.PUT_LINE('✅ Ride booked successfully!');
+            DBMS_OUTPUT.PUT_LINE('   🆔 Ride ID: ' || v_ride_id);
+            DBMS_OUTPUT.PUT_LINE('   💰 Estimated Fare: $' || TO_CHAR(v_estimated_fare, '999.99'));
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Booking failed: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 2: Calculate Fare with Promotion
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 2: Calculate Fare with Promotion');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        v_fare := pkg_ride_management.fn_calculate_fare(
+            p_vehicle_type_id => 2,
+            p_distance_km => 8.0,
+            p_promo_code => 'WELCOME10'
+        );
+        
+        DBMS_OUTPUT.PUT_LINE('   Vehicle: Premium');
+        DBMS_OUTPUT.PUT_LINE('   Distance: 8.0 km');
+        DBMS_OUTPUT.PUT_LINE('   Promo: WELCOME10 (10% off)');
+        DBMS_OUTPUT.PUT_LINE('   💰 Final Fare: $' || TO_CHAR(v_fare, '999.99'));
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Fare calculation failed: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 3: Get Driver Rating
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 3: Get Driver Rating');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        v_driver_rating := pkg_ride_management.fn_get_driver_rating(
+            p_driver_id => 500
+        );
+        
+        DBMS_OUTPUT.PUT_LINE('   🚖 Driver ID: 500 (Ahmed Hassan)');
+        DBMS_OUTPUT.PUT_LINE('   ⭐ Rating: ' || TO_CHAR(v_driver_rating, '9.99') || ' / 5.0');
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Rating fetch failed: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 4: Assign Driver to Ride
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 4: Assign Driver to Ride');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        IF v_ride_id > 0 THEN
+            pkg_ride_management.sp_assign_driver(
+                p_ride_id => v_ride_id,
+                p_driver_id => 501,
+                p_success => v_success
+            );
+            
+            DBMS_OUTPUT.PUT_LINE('✅ ' || v_success);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('⚠️ Skipping - No ride available to assign');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Driver assignment failed: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 5: Complete Ride and Process Payment
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 5: Complete Ride & Process Payment');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        IF v_ride_id > 0 THEN
+            pkg_ride_management.sp_complete_ride(
+                p_ride_id => v_ride_id,
+                p_actual_fare => 12.50,
+                p_success => v_success
+            );
+            
+            DBMS_OUTPUT.PUT_LINE('✅ ' || v_success);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('⚠️ Skipping - No ride available to complete');
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Ride completion failed: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 6: Get Driver Rides (Cursor FOR Loop with Collections)
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 6: Get Driver Rides');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        pkg_ride_management.sp_get_driver_rides(
+            p_driver_id => 500,
+            p_rides_data => v_rides_cursor
+        );
+        
+        DBMS_OUTPUT.PUT_LINE('   📋 Driver Ride History:');
+        LOOP
+            FETCH v_rides_cursor INTO v_ride_rec;
+            EXIT WHEN v_rides_cursor%NOTFOUND;
+            DBMS_OUTPUT.PUT_LINE('      🆔 ' || v_ride_rec.ride_id || 
+                               ' | 👤 ' || v_ride_rec.customer_name ||
+                               ' | 📍 ' || v_ride_rec.pickup || ' → ' || v_ride_rec.dropoff ||
+                               ' | 💰 $' || TO_CHAR(v_ride_rec.fare, '999.99'));
+        END LOOP;
+        CLOSE v_rides_cursor;
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Failed to get driver rides: ' || SQLERRM);
+            IF v_rides_cursor%ISOPEN THEN
+                CLOSE v_rides_cursor;
+            END IF;
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- DEMO 7: Update Customer Stats
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 DEMO 7: Update Customer Statistics');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    BEGIN
+        pkg_ride_management.sp_update_customer_stats(
+            p_customer_id => 1000
+        );
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Stats update failed: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    
+    -- ============================================================
+    -- EXTRA: Collection Methods Demonstration
+    -- ============================================================
+    DBMS_OUTPUT.PUT_LINE('📌 EXTRA: Collection Methods Demonstration');
+    DBMS_OUTPUT.PUT_LINE('-----------------------------------------');
+    
+    DECLARE
+        TYPE status_list IS TABLE OF VARCHAR2(30);
+        v_statuses  status_list := status_list('REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
+        
+        TYPE status_count IS TABLE OF NUMBER INDEX BY VARCHAR2(30);
+        v_counts    status_count;
+        
+        CURSOR cur_status_counts IS
+            SELECT status, COUNT(*) AS cnt
+            FROM rides
+            GROUP BY status
+            ORDER BY status;
+            
+        v_idx       PLS_INTEGER;
+        v_status    VARCHAR2(30);
+        
+    BEGIN
+        OPEN cur_status_counts;
+        LOOP
+            FETCH cur_status_counts INTO v_status, v_counts(v_status);
+            EXIT WHEN cur_status_counts%NOTFOUND;
+        END LOOP;
+        CLOSE cur_status_counts;
+        
+        DBMS_OUTPUT.PUT_LINE('   📊 Ride Status Distribution:');
+        DBMS_OUTPUT.PUT_LINE('   Total status types: ' || v_counts.COUNT);
+        
+        -- Using FIRST and NEXT
+        v_idx := v_counts.FIRST;
+        WHILE v_idx IS NOT NULL LOOP
+            DBMS_OUTPUT.PUT_LINE('      ' || v_idx || ': ' || v_counts(v_idx) || ' rides');
+            v_idx := v_counts.NEXT(v_idx);
+        END LOOP;
+        
+        -- Using EXISTS
+        IF v_counts.EXISTS('COMPLETED') THEN
+            DBMS_OUTPUT.PUT_LINE('   ✅ Completed rides exist: ' || v_counts('COMPLETED'));
+        END IF;
+        
+        IF v_counts.EXISTS('PENDING') THEN
+            DBMS_OUTPUT.PUT_LINE('   ⚠️ Pending rides exist: ' || v_counts('PENDING'));
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('   ℹ️ No pending rides found');
+        END IF;
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('❌ Collection demo error: ' || SQLERRM);
+    END;
+    
+    DBMS_OUTPUT.PUT_LINE('');
+    DBMS_OUTPUT.PUT_LINE('=========================================');
+    DBMS_OUTPUT.PUT_LINE('✅ DEMO COMPLETED SUCCESSFULLY!');
+    DBMS_OUTPUT.PUT_LINE('=========================================');
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('❌ DEMO FAILED: ' || SQLERRM);
+        RAISE e_demo_failure;
+END;
+/
+
+-- ============================================================
+-- VERIFICATION QUERIES (No PROMPT commands to avoid popups)
+-- ============================================================
+
+-- Check table counts
+SELECT 'CUSTOMERS' AS Table_Name, COUNT(*) AS Row_Count FROM customers
+UNION ALL
+SELECT 'DRIVERS', COUNT(*) FROM drivers
+UNION ALL
+SELECT 'VEHICLES', COUNT(*) FROM vehicles
+UNION ALL
+SELECT 'VEHICLE_TYPES', COUNT(*) FROM vehicle_types
+UNION ALL
+SELECT 'RIDES', COUNT(*) FROM rides
+UNION ALL
+SELECT 'PAYMENTS', COUNT(*) FROM payments
+UNION ALL
+SELECT 'REVIEWS', COUNT(*) FROM reviews
+UNION ALL
+SELECT 'LOCATIONS', COUNT(*) FROM locations
+UNION ALL
+SELECT 'PROMOTIONS', COUNT(*) FROM promotions
+UNION ALL
+SELECT 'DRIVER_DOCUMENTS', COUNT(*) FROM driver_documents
+UNION ALL
+SELECT 'RIDE_EVENTS', COUNT(*) FROM ride_events
+UNION ALL
+SELECT 'USERS', COUNT(*) FROM users
+UNION ALL
+SELECT 'AUDIT_LOG', COUNT(*) FROM audit_log
+ORDER BY Table_Name;
+
+-- Check package exists
+SELECT object_name, object_type, status
+FROM user_objects
+WHERE object_name = 'PKG_RIDE_MANAGEMENT';
+
+-- Check triggers exist
+SELECT trigger_name, table_name, status
+FROM user_triggers
+WHERE table_name IN ('RIDES', 'PAYMENTS');
+
+COMMIT;
+/
