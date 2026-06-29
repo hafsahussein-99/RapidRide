@@ -10,13 +10,13 @@ RapidRide is a comprehensive ride-hailing and taxi management system that connec
 
 ## 👥 Group Members
 
-| # | Full Name | Student ID | Role |
-|---|-----------|------------|------|
-| 1 | Hafsa Hussein Ahmed | CS221116111 | Database Architect, PL/SQL Developer |
-| 2 | Dahran Sharif Omar | CS221116099 | Frontend Developer, Testing |
-| 3 | Adno Abdi Tahliil | CS221116207   | Report & Ppt Slides
-| 4 | Sumayo Mohamed Dahir | CS221116072| Frontend Developer, APEX UI Design |
-| 5 | Ajmal Abdinasir | CS221116081 | GitHub Manager, Documentation |
+| # | Full Name |  Role |
+|---|-----------|------|
+| 1 | Hafsa Hussein Ahmed |  Database Architect, PL/SQL Developer |
+| 2 | Dahran Sharif Omar  | Frontend Developer, Testing |
+| 3 | Adno Abdi Tahliil  | Report & Ppt Slides
+| 4 | Sumayo Mohamed Dahir | Frontend Developer, APEX UI Design |
+| 5 | Ajmal Abdinasir  | GitHub Manager, Documentation |
 
 ## 🛠️ Technology Stack
 
@@ -25,4 +25,3 @@ RapidRide is a comprehensive ride-hailing and taxi management system that connec
 - **Frontend**: Oracle APEX 23.1
 - **Version Control**: Git / GitHub
 
-## 📁 Project Structure
